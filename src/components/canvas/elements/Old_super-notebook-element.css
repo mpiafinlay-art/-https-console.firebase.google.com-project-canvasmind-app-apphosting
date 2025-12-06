@@ -1,0 +1,179 @@
+/* Variables CSS para mantener consistencia - ALINEACIÓN PERFECTA */
+:root {
+  --line-height: 1.5rem; /* 24px - La clave de la alineación perfecta */
+  --page-padding-top: 40px;
+  --background-offset-y: calc(var(--page-padding-top) + 18px);
+}
+
+/* Contenedor principal del super cuaderno - Acompaña el tamaño exacto del cuaderno */
+.super-notebook-wrapper {
+  width: 100%; /* Ocupa todo el espacio del Rnd */
+  height: 100%; /* Ocupa todo el espacio del Rnd */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* SIN SCROLL - El contenedor es exactamente del tamaño del Rnd */
+}
+
+.super-notebook-minimized {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Encabezado flotante - Fijo en la parte superior */
+.notebook-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 8px 8px 0 0;
+  user-select: none;
+  z-index: 10;
+  flex-shrink: 0; /* No se encoge */
+  height: 48px; /* Altura fija del header */
+}
+
+.notebook-header .drag-handle {
+  cursor: grab;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+}
+
+.notebook-header .drag-handle:active {
+  cursor: grabbing;
+}
+
+.notebook-title-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 8px;
+  min-width: 0;
+}
+
+.notebook-title-input:empty:before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.window-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+/* Contenedor de la página - Ocupa el espacio restante después del header, SIN SCROLL */
+.notebook-container {
+  width: 100%; /* Ocupa todo el ancho disponible */
+  flex: 1; /* Ocupa el espacio restante después del header */
+  overflow: hidden; /* SIN SCROLL - El contenedor es exactamente del tamaño del cuaderno */
+  background: #f1f5f9;
+  border-radius: 0 0 8px 8px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Fondo de la página con líneas - Tamaño exacto 21x27cm, SIN MARGEN, SIN SCROLL */
+.page-background {
+  position: relative;
+  width: 21cm; /* Tamaño exacto: 21cm */
+  height: 27cm; /* Tamaño exacto: 27cm - Altura fija */
+  margin: 0; /* SIN MARGEN - El contenedor es exactamente del tamaño */
+  background-color: #ffffff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  padding: var(--page-padding-top) 40px 40px 40px;
+  box-sizing: border-box;
+  flex-shrink: 0; /* No se encoge */
+  
+  /* Líneas del cuaderno - ALINEACIÓN PERFECTA: cada 1.5rem (24px) */
+  background-image: linear-gradient(#e2e8f0 1px, transparent 1px);
+  background-size: 100% var(--line-height); /* 1.5rem = 24px - La clave de la alineación */
+  background-position-y: var(--background-offset-y);
+}
+
+/* Margen rojo */
+.page-background::before {
+  content: '';
+  position: absolute;
+  top: var(--page-padding-top);
+  bottom: 40px;
+  left: 50px;
+  width: 1px;
+  background-color: #fca5a5;
+}
+
+/* Área de contenido editable - ALINEACIÓN PERFECTA con Poppins */
+/* IMPORTANTE: El texto debe iniciar DESPUÉS de la línea de margen */
+.page-content {
+  height: 100%;
+  width: 100%;
+  outline: none;
+  padding-left: 70px; /* 50px (margen rojo) + 20px (espacio después del margen) */
+  font-family: 'Poppins', sans-serif; /* Fuente Poppins */
+  font-size: 16px; /* text-base en Tailwind */
+  line-height: 1.5rem; /* leading-6 en Tailwind = 24px - LA CLAVE DE LA ALINEACIÓN */
+  color: #1e293b;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  box-sizing: border-box;
+}
+
+/* Permitir posicionamiento del cursor en cualquier línea - ALINEACIÓN PERFECTA */
+.page-content * {
+  line-height: 1.5rem; /* 24px - Debe coincidir exactamente con background-size */
+  min-height: 1.5rem; /* 24px */
+}
+
+.page-content div {
+  min-height: 1.5rem; /* 24px */
+}
+
+/* Paginación */
+.page-pagination {
+  position: absolute;
+  bottom: 60px;
+  right: 50px;
+  font-family: 'The Girl Next Door', cursive;
+  font-size: 16px;
+  color: #a0aec0;
+  user-select: none;
+}
+
+/* Controles de paginación */
+.pagination-controls {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+/* Nota: Las reglas duplicadas fueron eliminadas y consolidadas arriba */
+

@@ -1,0 +1,245 @@
+
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the CanvasMind application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL of the user's profile photo.",
+          "format": "uri"
+        },
+        "preferences": {
+            "type": "object",
+            "description": "User-specific application preferences.",
+            "properties": {
+                "microphonePermission": {
+                    "type": "string",
+                    "description": "The user's stored preference for microphone access.",
+                    "enum": ["granted", "denied", "prompt"]
+                }
+            }
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "displayName"
+      ]
+    },
+    "CanvasBoard": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CanvasBoard",
+      "type": "object",
+      "description": "Represents a canvas board where users create and organize content.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the CanvasBoard entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N CanvasBoard)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the canvas board."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the canvas board."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the canvas board was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the canvas board was last updated.",
+          "format": "date-time"
+        },
+        "lastView": {
+          "type": "object",
+          "description": "Stores the last known camera/viewport state for this board.",
+          "properties": {
+            "scale": {
+              "type": "number"
+            },
+            "scrollX": {
+              "type": "number"
+            },
+            "scrollY": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CanvasElement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CanvasElement",
+      "type": "object",
+      "description": "Represents an element on the canvas, such as a notepad, sticky note, image, or text.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the CanvasElement entity."
+        },
+        "canvasBoardId": {
+          "type": "string",
+          "description": "Reference to CanvasBoard. (Relationship: CanvasBoard 1:N CanvasElement)"
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of canvas element (e.g., notepad, sticky note, image, text, todolist)."
+        },
+        "x": {
+          "type": "number",
+          "description": "The x-coordinate of the element on the canvas."
+        },
+        "y": {
+          "type": "number",
+          "description": "The y-coordinate of the element on the canvas."
+        },
+        "width": {
+          "type": "number",
+          "description": "The width of the element."
+        },
+        "height": {
+          "type": "number",
+          "description": "The height of the element."
+        },
+        "zIndex": {
+          "type": "number",
+          "description": "The z-index of the element (stacking order)."
+        },
+        "content": {
+          "type": "string",
+          "description": "The content of the canvas element (e.g., text, image URL, notepad data)."
+        },
+        "properties": {
+          "type": "string",
+          "description": "JSON string containing element-specific properties."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the canvas element was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the canvas element was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "canvasBoardId",
+        "type",
+        "x",
+        "y",
+        "width",
+        "height",
+        "zIndex",
+        "content",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "google.com",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores individual user profiles. Each document is keyed by the user's UID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, matching their Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/canvasBoards/{canvasBoardId}",
+        "definition": {
+          "entityName": "CanvasBoard",
+          "schema": {
+            "$ref": "#/backend/entities/CanvasBoard"
+          },
+          "description": "A subcollection under each user containing their individual canvas boards.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The UID of the user who owns this board."
+            },
+            {
+              "name": "canvasBoardId",
+              "description": "The unique identifier for the canvas board."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/canvasBoards/{canvasBoardId}/canvasElements/{canvasElementId}",
+        "definition": {
+          "entityName": "CanvasElement",
+          "schema": {
+            "$ref": "#/backend/entities/CanvasElement"
+          },
+          "description": "A subcollection under each canvas board containing all the visual elements (notes, images, etc.) for that board.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The UID of the user who owns the parent board."
+            },
+            {
+              "name": "canvasBoardId",
+              "description": "The ID of the canvas board this element belongs to."
+            },
+            {
+              "name": "canvasElementId",
+              "description": "The unique identifier for the canvas element."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to support CanvasMind's core features - Visual Canvas, Note Organization with AI Assistance, Real-time Collaboration, Multimedia Integration, Database and Authentication, and Voice Dictation - while adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), QAPs (Rules are not Filters), and Invariants.\n\n**Authorization Independence:** Authorization is enforced using path-based ownership for user-specific data. CanvasBoards and CanvasElements are stored as subcollections of users, eliminating the need for `get()` calls in security rules and enabling atomic operations.\n\n**Clarity of Intent:** The structure explicitly defines ownership and relationships, making authorization intent clear. User-owned data is stored under `/users/{userId}`, and nested data follows a hierarchical structure.\n\n**DBAC (Database-Based Access Control):** Roles and permissions are managed solely based on the `request.auth.uid` and path-based ownership, avoiding the use of custom claims.\n\n**QAPs (Rules are not Filters):** The segregation of user data into separate collections enables secure `list` operations. Users can only list CanvasBoards and CanvasElements that belong to them.\n\n**Invariants:** The structure supports the integrity of ownership through path-based ownership. Timestamps can be enforced using security rules.\n\n**Justification:**\n\n*   `/users/{userId}`: This collection stores user profiles. Security rules will ensure that only the authenticated user can read/write their profile data.\n*   `/users/{userId}/canvasBoards/{canvasBoardId}`: This subcollection stores canvas boards owned by a specific user. The `userId` parameter establishes ownership. Each document contains the properties associated to the boards.\n*   `/users/{userId}/canvasBoards/{canvasBoardId}/canvasElements/{canvasElementId}`: This subcollection stores canvas elements associated with a specific canvas board. The `canvasBoardId` and `userId` parameters establishes ownership. Each document contains the properties associated to the elements."
+  }
+}

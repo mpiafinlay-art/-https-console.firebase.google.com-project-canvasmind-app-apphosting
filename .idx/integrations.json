@@ -1,0 +1,11 @@
+{
+  "firebase_hosting": {
+    "deploymentHostingUrl": "https://app-micerebro.web.app"
+  },
+  "cloud_run_deploy": {},
+  "app_hosting": {
+    "backendUrl": "https://canvasmind-backend--canvasmind-app.us-central1.hosted.app",
+    "backendId": "canvasmind-backend"
+  },
+  "last_updated": "2024-12-04"
+}

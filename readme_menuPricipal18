@@ -1,0 +1,195 @@
+
+# Guía de Construcción del Menú Principal (ToolsSidebar)
+
+Este documento detalla el plan de construcción, la funcionalidad y el código asociado al menú principal flotante de la aplicación CanvasMind, conocido como `ToolsSidebar`.
+
+---
+
+## 1. Plan de Construcción y Arquitectura
+
+El `ToolsSidebar` está diseñado como un panel de control central, flotante y arrastrable, que ofrece al usuario acceso rápido a todas las herramientas de creación y gestión del lienzo.
+
+### **Filosofía de Diseño:**
+*   **Accesibilidad:** Todas las herramientas principales están a un clic de distancia. Las acciones secundarias o relacionadas se agrupan en menús desplegables (`DropdownMenu`) para mantener la interfaz limpia.
+*   **Feedback Visual:** Los botones cambian de estado (`isActive`) para indicar qué herramienta está activa (ej. `Mover`). El botón de dictado tiene un estado especial de "grabando" para una retroalimentación clara.
+*   **Consistencia:** Utiliza los componentes de `ShadCN` (`Button`, `DropdownMenu`) y los iconos de `lucide-react`, manteniendo una estética coherente con el resto de la aplicación.
+*   **Modularidad:** El componente `ToolsSidebar` es un componente "tonto" que recibe todas sus funciones como `props` desde su padre, `board-content.tsx`. Esto centraliza la lógica del estado en un solo lugar y hace que el menú sea fácil de mantener.
+
+### **Componentes Clave:**
+*   **`Rnd`**: Componente de terceros que envuelve el menú para hacerlo arrastrable por la pantalla.
+*   **`DropdownMenu` de ShadCN**: Se utiliza para todos los botones que tienen sub-opciones (Tableros, Cuadernos, Notas, Imagen, Más).
+*   **`AlertDialog` de ShadCN**: Se usa para acciones destructivas que requieren confirmación del usuario, como "Limpiar Tablero".
+*   **`SidebarButton` (Componente Interno)**: Un componente reutilizable dentro de `ToolsSidebar` para estandarizar el estilo y comportamiento de los botones del menú.
+
+---
+
+## 2. Detalle de Botones y Funcionalidad
+
+A continuación, se detalla cada botón del `ToolsSidebar`, su icono, su función y el código que lo implementa.
+
+### **a) Agarre para Arrastrar (`GripVertical`)**
+*   **Icono:** `GripVertical`
+*   **Función:** No tiene una función `onClick`. Actúa como el `dragHandle` para el componente `Rnd`, permitiendo al usuario hacer clic y arrastrar para mover el menú.
+*   **Código Asociado (`ToolsSidebar.tsx`):**
+    ```tsx
+    <div className="drag-handle cursor-grab py-1 text-muted-foreground">
+      <GripVertical className="size-5" />
+    </div>
+    ```
+
+### **b) Tableros (`LayoutDashboard`)**
+*   **Icono:** `LayoutDashboard`
+*   **Función:** Abre un menú desplegable para la gestión de tableros.
+    *   **Nuevo Tablero:** Llama a `setIsCreateBoardOpen(true)` para abrir un diálogo de creación.
+    *   **Renombrar Tablero:** Llama a la prop `onRenameBoard`.
+    *   **Abrir Tablero...:** Muestra un submenú con la lista de tableros del usuario. Al hacer clic, navega a la URL del tablero seleccionado.
+*   **Código Asociado (`ToolsSidebar.tsx`):**
+    ```tsx
+    <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            {/* ... Botón de Tableros ... */}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="start" sideOffset={5}>
+            <DropdownMenuItem onClick={() => setIsCreateBoardOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                <span>Nuevo Tablero</span>
+            </DropdownMenuItem>
+             <DropdownMenuItem onClick={onRenameBoard}>
+                <Save className="mr-2 h-4 w-4" />
+                <span>Renombrar Tablero</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                    <span>Abrir Tablero...</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                     {boards.map((board) => (
+                        <DropdownMenuItem key={board.id} onClick={() => router.push(`/board/${board.id}`)}>
+                            <span>{board.name}</span>
+                        </DropdownMenuItem>
+                    ))}
+                </DropdownMenuSubContent>
+            </DropdownMenuSub>
+        </DropdownMenuContent>
+    </DropdownMenu>
+    ```
+
+### **c) Mover (`Move`)**
+*   **Icono:** `Move`
+*   **Función:** Activa/desactiva el modo de paneo del lienzo. Cuando está activo, el cursor se convierte en una mano (`cursor-grab`).
+*   **Estado:** `isActive={isPanning}`. El fondo del botón cambia a `accent` cuando `isPanning` es `true`.
+*   **Código Asociado (`ToolsSidebar.tsx`):**
+    ```tsx
+    <SidebarButton
+      icon={Move}
+      label="Mover"
+      onClick={onPanToggle}
+      isActive={isPanning}
+    />
+    ```
+    *   La función `onPanToggle` se pasa como prop desde `board-content.tsx`, donde cambia el estado `isPanning`.
+
+### **d) Cuadernos (`BookCopy`)**
+*   **Icono:** `BookCopy`
+*   **Función:** Abre un menú desplegable para gestionar cuadernos.
+    *   **Nuevo Cuaderno:** Llama a `addElement('notepad')`.
+    *   **Cuadernos Abiertos/Cerrados:** Lista los cuadernos existentes. Al hacer clic en uno, llama a `onLocateElement(id)` o `onOpenNotepad(id)` para centrar la vista en ese cuaderno.
+*   **Código Asociado (`ToolsSidebar.tsx`):**
+    ```tsx
+    <DropdownMenuItem onClick={() => addElement('notepad')}>
+      <Plus className="mr-2 h-4 w-4" />
+      <span>Nuevo Cuaderno</span>
+    </DropdownMenuItem>
+    {/* ... Mapeo de cuadernos existentes ... */}
+    <DropdownMenuItem key={notepad.id} onClick={() => onLocateElement(notepad.id)}>
+        {/* ... */}
+    </DropdownMenuItem>
+    ```
+
+### **e) Notas (`StickyNote`)**
+*   **Icono:** `StickyNote`
+*   **Función:** Abre un submenú con una paleta de colores. Al seleccionar un color, se crea una nueva nota adhesiva de ese color.
+*   **Código Asociado (`ToolsSidebar.tsx`):**
+    ```tsx
+    <DropdownMenuItem
+      key={name}
+      onClick={() => addElement('sticky', { color: name })}
+    >
+      <div className={cn('w-4 h-4 rounded-sm mr-2 border', className.split(' ')[0])} />
+      <span className="capitalize">{name}</span>
+    </DropdownMenuItem>
+    ```
+
+### **f) To-do (`List`)**
+*   **Icono:** `List`
+*   **Función:** Crea un nuevo elemento de lista de tareas en el lienzo.
+*   **Código Asociado (`ToolsSidebar.tsx`):**
+    ```tsx
+    <SidebarButton
+      icon={List}
+      label="To-do"
+      onClick={() => addElement('todo')}
+    />
+    ```
+
+### **g) Imagen (`ImageIcon`)**
+*   **Icono:** `ImageIcon`
+*   **Función:** Abre un menú desplegable para añadir imágenes.
+    *   **Desde URL:** Llama a `onAddImageFromUrl` para abrir un diálogo.
+    *   **Subir:** Llama a `onUploadImage`, que programáticamente hace clic en un `<input type="file" />` oculto.
+*   **Código Asociado (`ToolsSidebar.tsx`):**
+    ```tsx
+    <DropdownMenuItem onClick={onAddImageFromUrl}>
+      <Link className="mr-2 h-4 w-4" />
+      Desde URL
+    </DropdownMenuItem>
+    <DropdownMenuItem onClick={onUploadImage}>
+      <Upload className="mr-2 h-4 w-4" />
+      Subir
+    </DropdownMenuItem>
+    ```
+
+### **h) Dictar (`Mic`)**
+*   **Icono:** `Mic`
+*   **Función:** Inicia o detiene el reconocimiento de voz del navegador.
+*   **Estado:** `isActive={isDictating}`. Cuando `isDictating` es `true`, el botón adquiere un fondo rojo claro y una animación de pulso (`pulse-red`).
+*   **Prevención de Foco:** Utiliza `onMouseDown={(e) => e.preventDefault()}` para evitar que el botón robe el foco del campo de texto activo.
+*   **Código Asociado (`ToolsSidebar.tsx`):**
+    ```tsx
+     <SidebarButton
+        icon={Mic}
+        label="Dictar"
+        onClick={toggleDictation}
+        onMouseDown={(e) => e.preventDefault()}
+        className={cn(isDictating && 'bg-red-100 text-red-500 hover:bg-red-100/90 hover:text-red-500 pulse-red')}
+      />
+    ```
+
+### **i) Más Opciones (`MoreHorizontal`)**
+*   **Icono:** `MoreHorizontal`
+*   **Función:** Abre un menú con acciones globales adicionales.
+    *   **Formato de Texto:** Llama a `onFormatToggle` para mostrar/ocultar la barra de formato.
+    *   **Exportar a PNG:** Llama a `onExportBoardToPng`.
+    *   **Exportar a PDF...:** Llama a `onExportNotepadToPdf`.
+    *   **Limpiar Tablero:** Abre un `AlertDialog` de confirmación. Si se confirma, llama a `clearCanvas`.
+    *   **Cerrar Sesión:** Llama a `signOut` de Firebase.
+*   **Código Asociado (`ToolsSidebar.tsx`):**
+    ```tsx
+    <DropdownMenuItem onClick={onFormatToggle}>
+      <CaseSensitive className="mr-2 h-4 w-4" />
+      <span>Formato de Texto</span>
+    </DropdownMenuItem>
+    {/* ... Otras opciones ... */}
+    <AlertDialogTrigger asChild>
+        {/* ... */}
+    </AlertDialogTrigger>
+    <AlertDialogContent>
+        {/* ... */}
+        <AlertDialogAction onClick={clearCanvas} {/* ... */}>
+            Sí, limpiar tablero
+        </AlertDialogAction>
+    </AlertDialogContent>
+    ```
+
+    

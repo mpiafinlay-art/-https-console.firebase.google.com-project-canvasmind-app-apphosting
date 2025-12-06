@@ -1,0 +1,78 @@
+# ----------------------------------------
+# LOGS Y ARCHIVOS DE DEPURACIÓN
+# ----------------------------------------
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log*
+.DS_Store # Archivos de macOS
+Thumbs.db # Archivos de Windows
+
+# ----------------------------------------
+# DEPENDENCIAS Y BUILD ARTEFACTOS
+# ----------------------------------------
+# Directorios de dependencias del proyecto (node_modules)
+node_modules/
+.pnp/
+.pnp.cjs
+
+# Archivos y directorios de construcción (Next.js, etc.)
+.next/        # Carpeta de compilación de Next.js
+out/          # Posible carpeta de exportación estática de Next.js
+build/        # Carpeta común de salida de builds
+dist/         # Carpeta común de salida de builds
+
+# Archivos de cache generados por herramientas
+.cache/
+.eslintcache
+*.tgz         # Archivos tarball de paquetes
+*.zip         # Archivos zip (podrían ser builds, backups, etc.)
+
+# ----------------------------------------
+# ARCHIVOS DE CONFIGURACIÓN DE ENTORNO
+# ----------------------------------------
+# Variables de entorno (¡CRÍTICO! ¡NO SUBIR CREDENCIALES!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local  # Ignora cualquier .env con sufijos
+# Si usas un archivo .env en producción, asegúrate de que esté listado aquí o gestionado por tu CI/CD.
+
+# ----------------------------------------
+# ESPECÍFICOS DE FIREBASE Y NEXT.JS (CRÍTICOS PARA TU CASO)
+# ----------------------------------------
+# Directorios generados por Firebase CLI (emuladores, cache, funciones compiladas)
+.firebase/ # ¡MUY IMPORTANTE! Contiene archivos grandes como los .pack y .node
+
+# Archivos temporales o de cache de Next.js que exceden límites de GitHub
+# *.pack es para los archivos de cache de Webpack
+# *.node es para los módulos binarios nativos (como next-swc.node)
+*.pack
+*.node
+
+# Archivos de declaración de tipo de Next.js que a menudo son generados
+next-env.d.ts
+
+# ----------------------------------------
+# CONFIGURACIÓN DE EDITORES Y HERRAMIENTAS
+# ----------------------------------------
+.vscode/      # Archivos de configuración de VS Code (opcional si quieres compartirlos con el equipo)
+.idea/        # Archivos de configuración de JetBrains IDEs (IntelliJ, WebStorm)
+
+# ----------------------------------------
+# GENERADOS POR OTROS SISTEMAS
+# ----------------------------------------
+.terraform/   # Si usas Terraform
+terraform.tfstate
+terraform.tfstate.backup
+
+
+# Archivos grandes
+*.tar.gz
+*.zip
+*.tar

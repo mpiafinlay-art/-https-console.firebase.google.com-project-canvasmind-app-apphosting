@@ -1,0 +1,147 @@
+
+# Guía de Construcción de la Barra de Formato (FormattingToolbar)
+
+Este documento detalla el plan de construcción, la funcionalidad y el código asociado a la barra de herramientas de formato de texto de la aplicación CanvasMind.
+
+---
+
+## 1. Plan de Construcción y Arquitectura
+
+La `FormattingToolbar` es un panel de herramientas flotante y contextual, diseñado para ofrecer opciones de formato de texto enriquecido al usuario, principalmente dentro de los cuadernos (`NotepadElement`).
+
+### **Filosofía de Diseño:**
+*   **Contextual y Bajo Demanda:** La barra no es visible por defecto. Aparece solo cuando el usuario la invoca a través del menú principal ("Más" -> "Formato de Texto") o desde el atajo en la cabecera de un cuaderno. Se puede cerrar en cualquier momento.
+*   **Flotante y Arrastrable:** Al igual que el menú principal, utiliza la librería `react-rnd` para permitir al usuario moverla a cualquier parte de la pantalla y evitar que obstruya el contenido.
+*   **Acción Directa sobre la Selección:** Todas las herramientas de formato operan directamente sobre el texto que el usuario ha seleccionado en un campo `contentEditable`.
+*   **Basado en `document.execCommand`:** La mayoría de las acciones de formato (negrita, cursiva, color) utilizan el comando nativo del navegador `document.execCommand`. Aunque es una API considerada "legacy", es la forma más directa y compatible de implementar formato de texto enriquecido en un `div` con `contentEditable`.
+
+### **Componentes Clave:**
+*   **`Rnd`**: Envuelve la barra de herramientas para hacerla arrastrable.
+*   **`Popover` de ShadCN**: Se utiliza para los selectores de color, mostrando una paleta de opciones sin ocupar espacio permanentemente.
+*   **`Button` de ShadCN**: Todos los botones de acción utilizan este componente.
+*   **Iconos de `lucide-react`**: Proporcionan una iconografía clara para cada acción de formato.
+
+---
+
+## 2. Detalle de Botones y Funcionalidad
+
+A continuación, se detalla cada botón de la `FormattingToolbar`, su icono, su función y el código que lo implementa.
+
+### **a) Agarre para Arrastrar (`GripVertical`)**
+*   **Icono:** `GripVertical`
+*   **Función:** Actúa como el `dragHandle` para el componente `Rnd`, permitiendo mover la barra de herramientas.
+*   **Código Asociado (`formatting-toolbar.tsx`):**
+    ```tsx
+    <GripVertical className="h-5 w-5 drag-handle cursor-move text-muted-foreground" onMouseDown={(e) => e.preventDefault()} />
+    ```
+
+### **b) Color de Texto (`Type`)**
+*   **Icono:** `Type`
+*   **Función:** Abre un `Popover` que muestra una paleta de colores de texto. Al hacer clic en un color, ejecuta `document.execCommand('foreColor', false, colorValue)`.
+*   **Código Asociado (`formatting-toolbar.tsx`):**
+    ```tsx
+    <Popover open={popoverOpen === 'foreColor'} onOpenChange={(open) => setPopoverOpen(open ? 'foreColor' : null)}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="icon" className="h-8 w-8" title="Color de Texto" onMouseDown={(e) => e.preventDefault()}><Type className="h-4 w-4" /></Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-2" onMouseDown={(e) => e.preventDefault()}>
+        <div className="grid grid-cols-3 gap-2">
+          {textColors.map(color => (
+            <Button variant="outline" size="icon" key={color.value} className="w-8 h-8 rounded-md border" style={{ backgroundColor: color.value }} onMouseDown={(e) => handleFormat(e, 'foreColor', color.value)} />
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+    ```
+
+### **c) Resaltar (`Highlighter`)**
+*   **Icono:** `Highlighter`
+*   **Función:** Similar al color de texto, abre un `Popover` con colores de resaltado. Ejecuta `document.execCommand('hiliteColor', false, colorValue)`.
+*   **Código Asociado (`formatting-toolbar.tsx`):**
+    ```tsx
+    <Popover open={popoverOpen === 'hiliteColor'} onOpenChange={(open) => setPopoverOpen(open ? 'hiliteColor' : null)}>
+        {/* ... */}
+        <Button variant="outline" size="icon" key={color.value} className="w-8 h-8 rounded-md border" style={{ backgroundColor: color.value }} onMouseDown={(e) => handleFormat(e, 'hiliteColor', color.value)} />
+        {/* ... */}
+    </Popover>
+    ```
+
+### **d) Subrayado de Color (`Underline`)**
+*   **Icono:** `Underline`
+*   **Función:** Abre un `Popover` con una paleta de colores. Al seleccionar un color, en lugar de usar `execCommand`, envuelve el texto seleccionado en un `<span>` con estilos CSS para un subrayado más grueso y de color (`text-decoration-color`, `text-decoration-thickness`).
+*   **Código Asociado (`formatting-toolbar.tsx`):**
+    ```tsx
+    const applyColoredUnderline = (e: MouseEvent, color: string) => {
+      e.preventDefault();
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+      const range = selection.getRangeAt(0);
+      const span = document.createElement('span');
+      span.style.textDecoration = 'underline';
+      span.style.textDecorationColor = color;
+      span.style.textDecorationThickness = '2px';
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+      setPopoverOpen(null);
+    };
+    ```
+
+### **e) Estilos Básicos (Negrita, Cursiva, Tachado)**
+*   **Iconos:** `Bold`, `Italic`, `Strikethrough`
+*   **Función:** Aplican el formato correspondiente al texto seleccionado ejecutando `document.execCommand` con los comandos `'bold'`, `'italic'` y `'strikeThrough'`.
+*   **Código Asociado (`formatting-toolbar.tsx`):**
+    ```tsx
+    <Button variant="outline" size="icon" className="h-8 w-8" onMouseDown={(e) => handleFormat(e, 'bold')} title="Negrita"><Bold className="h-4 w-4" /></Button>
+    <Button variant="outline" size="icon" className="h-8 w-8" onMouseDown={(e) => handleFormat(e, 'italic')} title="Cursiva"><Italic className="h-4 w-4" /></Button>
+    <Button variant="outline" size="icon" className="h-8 w-8" onMouseDown={(e) => handleFormat(e, 'strikeThrough')} title="Tachar"><Strikethrough className="h-4 w-4" /></Button>
+    ```
+
+### **f) Crear Lista (`List`)**
+*   **Icono:** `List`
+*   **Función:** Abre un `Popover` que ofrece dos opciones: lista con viñetas (`insertUnorderedList`) o lista numerada (`insertOrderedList`). Ejecuta el comando correspondiente de `document.execCommand`.
+*   **Código Asociado (`formatting-toolbar.tsx`):**
+    ```tsx
+    const toggleList = (e: MouseEvent, listType: 'insertUnorderedList' | 'insertOrderedList') => {
+        e.preventDefault();
+        document.execCommand(listType, false);
+        setPopoverOpen(null);
+    };
+    ```
+
+### **g) Insertar Fecha (`CalendarDays`)**
+*   **Icono:** `CalendarDays`
+*   **Función:** Inserta la fecha actual (`dd/MM/yy`) en la posición del cursor, envuelta en un `<span>` con un color de texto gris (`#a0a1a6`) para un formato discreto.
+*   **Código Asociado (`formatting-toolbar.tsx`):**
+    ```tsx
+    const handleInsertDate = (e: MouseEvent) => {
+      e.preventDefault();
+      const span = document.createElement('span');
+      span.style.color = '#a0a1a6';
+      span.textContent = `-- ${format(new Date(), 'dd/MM/yy')} `;
+      document.execCommand('insertHTML', false, span.outerHTML);
+    };
+    ```
+
+### **h) Limpiar Formato (`Eraser`)**
+*   **Icono:** `Eraser`
+*   **Función:** Ejecuta `document.execCommand('removeFormat', false)` sobre el texto seleccionado. Además, recorre el contenido seleccionado para eliminar manualmente los estilos de `<span>` que `removeFormat` a veces no elimina (como el subrayado de color), garantizando una limpieza completa.
+*   **Código Asociado (`formatting-toolbar.tsx`):**
+    ```tsx
+    const clearFormatting = (e: MouseEvent) => {
+        e.preventDefault();
+        document.execCommand('removeFormat', false);
+        // ... Lógica adicional para limpiar spans de subrayado ...
+    };
+    ```
+
+### **i) Cerrar (`X`)**
+*   **Icono:** `X`
+*   **Función:** Cierra la barra de herramientas llamando a la función `onClose` pasada como prop.
+*   **Código Asociado (`formatting-toolbar.tsx`):**
+    ```tsx
+    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose} onMouseDown={(e) => e.preventDefault()}>
+      <X className="h-4 w-4" />
+    </Button>
+    ```
+
+    

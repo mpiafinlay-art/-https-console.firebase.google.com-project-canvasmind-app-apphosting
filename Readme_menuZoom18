@@ -1,0 +1,99 @@
+
+# Guía de Construcción del Menú de Zoom (ZoomControls)
+
+Este documento detalla el plan de construcción, la funcionalidad y el código asociado al panel de controles de zoom y navegación de la aplicación CanvasMind, conocido como `ZoomControls`.
+
+---
+
+## 1. Plan de Construcción y Arquitectura
+
+El componente `ZoomControls` está diseñado como un panel de control fijo y no intrusivo que proporciona al usuario herramientas esenciales para navegar por el lienzo infinito.
+
+### **Filosofía de Diseño:**
+*   **Posicionamiento Fijo:** Está anclado en la esquina inferior derecha de la pantalla (`absolute bottom-4 right-4`), asegurando que siempre esté accesible sin importar en qué parte del lienzo se encuentre el usuario.
+*   **Claridad y Simplicidad:** Cada botón tiene un icono claro y universal (`lucide-react`) que comunica su función de inmediato. El nivel de zoom actual se muestra como un porcentaje para una retroalimentación directa.
+*   **Agrupación Lógica:** Los controles están agrupados por función: zoom (`+`, `-`, `%`), y navegación/encuadre (`Focus`, `Home`). Un separador visual (`Separator`) distingue los dos grupos.
+*   **Componente Tonto:** Al igual que el `ToolsSidebar`, `ZoomControls` es un componente que no tiene estado propio. Recibe todas sus funciones y el valor de `scale` como `props` desde el componente `Canvas`, que a su vez las recibe de `board-content.tsx`.
+
+### **Componentes Clave:**
+*   **`Button` de ShadCN**: Se utiliza para todos los botones de acción, con la variante `ghost` para una apariencia minimalista y `size="icon"` para un tamaño uniforme.
+*   **`Separator` de ShadCN**: Un divisor vertical para organizar visualmente los grupos de botones.
+*   **Iconos de `lucide-react`**: `ZoomIn`, `ZoomOut`, `Focus`, `Home`.
+
+---
+
+## 2. Detalle de Botones y Funcionalidad
+
+A continuación, se detalla cada botón del panel `ZoomControls`, su icono, su función y el código que lo implementa.
+
+### **a) Alejar (`ZoomOut`)**
+*   **Icono:** `ZoomOut`
+*   **Función:** Reduce el nivel de zoom del lienzo en un 10% con cada clic. Llama a la función `zoomOut`, que se pasa como prop.
+*   **Código Asociado (`ZoomControls.tsx`):**
+    ```tsx
+    <Button variant="ghost" size="icon" onClick={zoomOut} className="h-8 w-8">
+      <ZoomOut className="h-4 w-4" />
+      <span className="sr-only">Alejar</span>
+    </Button>
+    ```
+    *   La función `zoomOut` se define en `canvas.tsx`, donde calcula el nuevo `scale` y llama a `setZoom`.
+
+### **b) Nivel de Zoom (Porcentaje)**
+*   **Icono:** Ninguno. Muestra texto.
+*   **Función:**
+    1.  **Visualización:** Muestra el nivel de zoom actual (`scale`) como un porcentaje redondeado (ej. "100%", "50%").
+    2.  **Acción:** Al hacer clic, restablece el zoom al 100% sin cambiar la posición del lienzo. Llama a la función `resetZoom`.
+*   **Código Asociado (`ZoomControls.tsx`):**
+    ```tsx
+    <button
+      onClick={resetZoom}
+      className="flex h-8 w-12 items-center justify-center rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+    >
+      {Math.round(scale * 100)}%
+    </button>
+    ```
+    *   `resetZoom` y `scale` se pasan como props desde `canvas.tsx`.
+
+### **c) Acercar (`ZoomIn`)**
+*   **Icono:** `ZoomIn`
+*   **Función:** Aumenta el nivel de zoom del lienzo en un 10% con cada clic. Llama a la función `zoomIn`, que se pasa como prop.
+*   **Código Asociado (`ZoomControls.tsx`):**
+    ```tsx
+    <Button variant="ghost" size="icon" onClick={zoomIn} className="h-8 w-8">
+      <ZoomIn className="h-4 w-4" />
+      <span className="sr-only">Acercar</span>
+    </Button>
+    ```
+
+### **d) Separador Vertical**
+*   **Función:** Un elemento puramente visual para separar los controles de zoom de los de navegación.
+*   **Código Asociado (`ZoomControls.tsx`):**
+    ```tsx
+    <Separator orientation="vertical" className="h-6" />
+    ```
+
+### **e) Centrar en Contenido (`Focus`)**
+*   **Icono:** `Focus`
+*   **Función:** Ajusta el zoom y la posición del lienzo para encuadrar todos los elementos presentes en el tablero, ofreciendo una vista general. Llama a la función `centerOnElements` pasada como prop.
+*   **Código Asociado (`ZoomControls.tsx`):**
+    ```tsx
+    <Button variant="ghost" size="icon" onClick={centerOnElements} className="h-8 w-8">
+      <Focus className="h-4 w-4" />
+      <span className="sr-only">Centrar en Contenido</span>
+    </Button>
+    ```
+    *   La lógica real de `centerOnElements` vive en `canvas.tsx` y es expuesta a `board-content.tsx` a través de `useImperativeHandle`, permitiendo que el lienzo calcule el cuadro delimitador de todos sus elementos.
+
+### **f) Ir al Inicio (`Home`)**
+*   **Icono:** `Home`
+*   **Función:** Desplaza la vista del lienzo a las coordenadas de origen (la esquina superior izquierda del área de 80000x80000 px) y restablece el zoom al 100%. Llama a la función `goToHome` pasada como prop.
+*   **Código Asociado (`ZoomControls.tsx`):**
+    ```tsx
+    <Button variant="ghost" size="icon" onClick={goToHome} className="h-8 w-8">
+      <Home className="h-4 w-4" />
+      <span className="sr-only">Ir al Inicio</span>
+    </Button>
+    ```
+    *   La función `goToHome` también se define en `canvas.tsx`, donde directamente manipula el `scrollLeft` y `scrollTop` del contenedor del lienzo.
+
+    

@@ -1,0 +1,125 @@
+
+# Guía de Construcción del Encabezado del Cuaderno (NotepadElement Header)
+
+Este documento detalla el plan de construcción, la funcionalidad y el código asociado a la barra de encabezado del componente `NotepadElement`.
+
+---
+
+## 1. Plan de Construcción y Arquitectura
+
+El encabezado del cuaderno es una barra de herramientas multifuncional que sirve como el principal punto de interacción con un cuaderno específico. Está diseñado para ser intuitivo y potente, agrupando acciones de edición, gestión y formato.
+
+### **Filosofía de Diseño:**
+*   **Interactividad Directa:** Todos los controles afectan únicamente al cuaderno al que pertenecen.
+*   **Agrupación Funcional:** Los botones están organizados de izquierda a derecha por tipo de acción: movimiento (agarre), título editable, acciones de formato/edición, menú de opciones avanzadas, y controles de ventana (minimizar, cerrar).
+*   **Prevención de Propagación:** Todos los botones y menús usan `onMouseDown={(e) => e.stopPropagation()}` para evitar que un clic en un control del encabezado se propague al lienzo y deseleccione el cuaderno. El título editable y el agarre son parte del `drag-handle` de `react-rnd`, pero el resto de los botones no para permitir clics sin mover el cuaderno.
+*   **Componentes Reutilizables:** Utiliza componentes de `ShadCN` como `Button` (variante `ghost` y `icon` para una apariencia compacta), `DropdownMenu` y `AlertDialog`.
+
+### **Componentes Clave:**
+*   **`div` con `contentEditable`**: Para el título del cuaderno.
+*   **`Button` de ShadCN**: Para todos los botones de acción.
+*   **`DropdownMenu` de ShadCN**: Para el menú de "Más opciones".
+*   **`AlertDialog` de ShadCN**: Para la confirmación de eliminación.
+*   **Iconos de `lucide-react`**: Para una identificación visual clara de cada acción.
+
+---
+
+## 2. Detalle de Botones y Funcionalidad
+
+A continuación, se detalla cada control del encabezado del cuaderno, de izquierda a derecha.
+
+### **a) Agarre para Arrastrar (`GripVertical`)**
+*   **Icono:** `GripVertical`
+*   **Función:** Es el principal indicador visual de que el encabezado es un área de arrastre. Forma parte del `div` con la clase `drag-handle` que `react-rnd` utiliza para mover el elemento.
+
+### **b) Título Editable**
+*   **Elemento:** Un `div` con el atributo `contentEditable="true"`.
+*   **Función:** Permite al usuario hacer clic y editar el nombre del cuaderno directamente. Al perder el foco (`onBlur`), la función `handleTitleBlur` se dispara, compara el nuevo título con el anterior y, si hay cambios, llama a `props.onUpdate` para guardar el nuevo título en Firestore.
+*   **Código Asociado (`notepad-element.tsx`):**
+    ```tsx
+    <div
+      ref={titleRef}
+      contentEditable
+      suppressContentEditableWarning
+      onBlur={handleTitleBlur}
+      onMouseDown={(e) => e.stopPropagation()}
+      className="bg-transparent flex-grow outline-none cursor-text ..."
+    >{content.title}</div>
+    ```
+
+### **c) Mejorar Texto con IA (`Wand`)**
+*   **Icono:** `Wand`
+*   **Función:** Abre un diálogo de corrección de texto. Al hacer clic, toma el texto que el usuario tenga seleccionado, lo envía a un flujo de IA (`text-correction-flow.ts`) para su mejora, y muestra el resultado en un diálogo de comparación (`TextCorrectionDialog`).
+*   **Código Asociado (`notepad-element.tsx`):**
+    ```tsx
+    <Button variant="ghost" size="icon" className="size-7" title="Mejorar texto seleccionado" onClick={handleAiCorrect}><Wand className="size-4" /></Button>
+    ```
+
+### **d) Seleccionar Todo (`ClipboardCopy`)**
+*   **Icono:** `ClipboardCopy`
+*   **Función:** Selecciona todo el texto de la página actual del cuaderno. Es un atajo útil para copiar o aplicar formato a todo el contenido de una vez.
+*   **Código Asociado (`notepad-element.tsx`):**
+    ```tsx
+    const handleSelectAllText = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (contentRef.current) {
+        const range = document.createRange();
+        range.selectNodeContents(contentRef.current);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
+    };
+    ```
+
+### **e) Limpiar Formato (`Eraser`)**
+*   **Icono:** `Eraser`
+*   **Función:** Ejecuta `document.execCommand('removeFormat', false)` sobre el texto seleccionado, eliminando estilos como negrita, cursiva, color, etc.
+*   **Código Asociado (`notepad-element.tsx`):**
+    ```tsx
+    <Button variant="ghost" size="icon" className="size-7" title="Limpiar formato" onClick={handleClearPastedFormatting}><Eraser className="size-4" /></Button>
+    ```
+
+### **f) Abrir Formato (`CaseSensitive`)**
+*   **Icono:** `CaseSensitive`
+*   **Función:** Es un atajo para mostrar/ocultar la `FormattingToolbar`. Llama a la función `props.onFormatToggle()`.
+
+### **g) Insertar Fecha (`CalendarDays`)**
+*   **Icono:** `CalendarDays`
+*   **Función:** Inserta la fecha actual en la posición del cursor con un formato discreto.
+
+### **h) Menú de Opciones (`MoreVertical`)**
+*   **Icono:** `MoreVertical`
+*   **Función:** Abre un `DropdownMenu` con acciones avanzadas específicas para el cuaderno.
+    *   **Exportar a PDF...**: Llama a `props.onExportNotepadToPdf?.(props.id)`, que abre el diálogo de exportación a PDF.
+    *   **Exportar a PNG...**: Llama a `props.onExportNotepadToPng?.(props.id)`.
+    *   **Cambiar formato...**: Llama a `props.onChangeNotepadFormat?.(props.id)` para abrir un diálogo que permite cambiar el tamaño del cuaderno entre "Carta" y "10x15".
+*   **Código Asociado (`notepad-element.tsx`):**
+    ```tsx
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="size-7"><MoreVertical className="size-4" /></Button></DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem onClick={() => props.onExportNotepadToPdf?.(props.id)}>...</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => props.onExportNotepadToPng?.(props.id)}>...</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => props.onChangeNotepadFormat?.(props.id)}>...</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+    ```
+
+### **i) Restaurar Tamaño (`Maximize2`)**
+*   **Icono:** `Maximize2`
+*   **Función:** Devuelve el cuaderno a su tamaño por defecto (756x945 para Carta, 378x567 para 10x15), revirtiendo cualquier redimensionamiento manual.
+
+### **j) Minimizar/Maximizar (`Minus`/`Maximize`)**
+*   **Iconos:** `Minus` o `Maximize`, dependiendo del estado.
+*   **Función:** Contrae el cuaderno a solo su barra de título para ahorrar espacio en el lienzo. Al volver a hacer clic, lo restaura a su tamaño anterior.
+
+### **k) Eliminar (`Trash2`)**
+*   **Icono:** `Trash2`
+*   **Función:** Abre un `AlertDialog` para confirmar la eliminación del cuaderno. Si el usuario confirma, llama a `props.onDelete(props.id)`.
+
+### **l) Cerrar (`X`)**
+*   **Icono:** `X`
+*   **Función:** Oculta el cuaderno del lienzo (lo marca como `hidden: true` en Firestore). El cuaderno no se elimina y puede ser reabierto desde el menú "Cuadernos" en el `ToolsSidebar`.
+
+    

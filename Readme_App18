@@ -1,0 +1,136 @@
+
+# Guía Maestra de la Aplicación CanvasMind
+
+Este documento es la guía definitiva y el manual de usuario completo para la aplicación **CanvasMind**. Describe la arquitectura general, detalla cada categoría funcional y proporciona instrucciones paso a paso sobre cómo utilizar todas las características implementadas.
+
+---
+
+## 1. Plan de Construcción y Arquitectura General
+
+CanvasMind está construida como una **Single Page Application (SPA)** moderna utilizando Next.js con el App Router. La arquitectura está diseñada para ser robusta, escalable y, sobre todo, estable.
+
+### **Categorías Funcionales Clave:**
+
+1.  **Núcleo de Firebase:** El corazón de la aplicación. Utiliza Firebase Authentication para la gestión de usuarios (Google y Anónimo) y Firestore como base de datos en tiempo real para almacenar todos los datos del usuario (tableros y elementos). Una arquitectura de proveedores (`FirebaseClientProvider`) aísla el SDK del servidor para evitar errores de renderizado.
+2.  **Lienzo Infinito (`Canvas`):** Es el espacio de trabajo principal. Un `div` de gran tamaño (80000x80000px) que permite zoom y paneo, sobre el cual se renderizan todos los elementos.
+3.  **Elementos Transformables (`TransformableElement`):** Cada objeto en el lienzo (cuaderno, nota, etc.) es un "elemento transformable". Utiliza `react-rnd` para ser arrastrable y redimensionable, y muestra controles contextuales (eliminar, duplicar).
+4.  **Menú Principal (`ToolsSidebar`):** Un panel flotante y arrastrable que actúa como el centro de control para crear elementos y gestionar la aplicación.
+5.  **Paneles Contextuales:** Menús adicionales que aparecen bajo demanda, como la barra de formato de texto (`FormattingToolbar`) y los diálogos de creación/edición.
+6.  **Sistema de Dictado por Voz:** Una funcionalidad universal que permite al usuario dictar texto en cualquier campo editable del lienzo.
+
+---
+
+## 2. Manual de Uso Completo
+
+### **Paso 1: Inicio de Sesión**
+
+Al abrir la aplicación, se te presentarán dos opciones:
+*   **Entrar con Google:** Recomendado. Inicia sesión con tu cuenta de Google. Tu trabajo se guardará de forma permanente.
+*   **Entrar como Invitado:** Inicia una sesión anónima. Tu trabajo se guardará, pero solo en el dispositivo y navegador actual. Si limpias las cookies o cambias de dispositivo, perderás el acceso.
+
+Una vez que inicies sesión, serás llevado automáticamente a tu último tablero. Si eres un usuario nuevo, se creará un "Mi Primer Tablero" para ti.
+
+### **Paso 2: Navegando por el Lienzo**
+
+El lienzo es tu espacio de trabajo. Puedes navegar por él de las siguientes maneras:
+
+*   **Paneo (Mover el lienzo):**
+    1.  Haz clic en el icono `Move` (cuatro flechas) en el Menú Principal.
+    2.  El cursor se convertirá en una mano. Haz clic en cualquier parte del fondo del lienzo y arrastra para moverte.
+    3.  Vuelve a hacer clic en el icono `Move` para desactivar este modo.
+    *   **Atajo:** Mantén presionada la **barra espaciadora** para activar temporalmente el modo de paneo.
+*   **Zoom:**
+    1.  Usa la **rueda del ratón** mientras mantienes presionada la tecla **`Ctrl`** (o `Cmd` en Mac).
+    2.  Utiliza los botones `+` y `-` en el **Menú de Zoom** en la esquina inferior derecha.
+    3.  Haz clic en el porcentaje en el Menú de Zoom para restablecer el zoom al 100%.
+
+### **Paso 3: Usando el Menú Principal (`ToolsSidebar`)**
+
+Este menú flotante es tu caja de herramientas.
+
+*   **Arrastrar Menú:** Haz clic en el icono `GripVertical` (puntos verticales) en la parte superior y arrástralo a donde te sea más cómodo.
+*   **Tableros:**
+    *   **Nuevo Tablero:** Crea un nuevo lienzo en blanco.
+    *   **Renombrar Tablero:** Cambia el nombre del tablero actual.
+    *   **Abrir Tablero...:** Navega rápidamente entre todos tus tableros.
+*   **Cuadernos:**
+    *   **Nuevo Cuaderno:** Crea un cuaderno de tamaño carta en el centro de tu vista.
+    *   **Cuadernos Abiertos/Cerrados:** Te permite saltar rápidamente a cualquier cuaderno en tu lienzo, incluso si lo has "cerrado" (ocultado).
+*   **Notas:** Crea notas adhesivas (Post-it) de diferentes colores.
+*   **To-do:** Crea una lista de tareas con casillas de verificación.
+*   **Imagen:**
+    *   **Desde URL:** Pega un enlace a una imagen de internet.
+    *   **Subir:** Sube una imagen desde tu ordenador.
+*   **Dictar:**
+    1.  **Haz clic** en cualquier lugar donde se pueda escribir (un cuaderno, una nota, etc.).
+    2.  Haz clic en el icono `Mic`. El botón se volverá rojo.
+    3.  Comienza a hablar. El texto aparecerá donde estaba tu cursor.
+    4.  Vuelve a hacer clic en el icono `Mic` para detener el dictado.
+*   **Más:**
+    *   **Formato de Texto:** Muestra/oculta la barra de herramientas para dar estilo al texto (negrita, colores, etc.).
+    *   **Exportar a PNG:** Descarga una imagen de tu tablero actual.
+    *   **Limpiar Tablero:** Elimina **todos** los elementos del lienzo (pide confirmación).
+    *   **Cerrar Sesión:** Te desconecta de la aplicación.
+
+### **Paso 4: Trabajando con Elementos**
+
+Cada elemento que creas puede ser manipulado.
+
+*   **Seleccionar:** Haz un solo clic en un elemento para seleccionarlo. Verás un borde azul a su alrededor.
+*   **Mover:** Haz clic y arrastra un elemento desde cualquier parte que tenga la clase `drag-handle` (generalmente, el encabezado o el cuerpo principal) para moverlo.
+*   **Redimensionar:** Haz clic y arrastra las pequeñas manijas en las esquinas y lados de un elemento seleccionado para cambiar su tamaño.
+*   **Controles Contextuales:** Cuando un elemento está seleccionado, aparecen pequeños botones en las esquinas:
+    *   **Superior-Derecha (`Trash2`):** Elimina el elemento.
+    *   **Superior-Izquierda (`Copy` o `Tag`):** Duplica el elemento (para la mayoría) o permite añadir una etiqueta flotante (para imágenes).
+
+#### **Uso Específico del Cuaderno (`NotepadElement`)**
+
+El cuaderno es el elemento más potente.
+*   **Editar Título:** Haz clic en el título para cambiarlo.
+*   **Escribir:** Haz clic en el área de la página y comienza a escribir. La paginación es automática. Si el texto excede el espacio de una página, se creará una nueva y el texto continuará allí.
+*   **Navegar Páginas:** Usa los botones `<` y `>` en el pie de página del cuaderno.
+*   **Añadir Página:** Haz clic en el botón `+` en el pie de página.
+*   **Formato de Texto:** Usa los atajos en el encabezado del cuaderno (`CaseSensitive`) o en el Menú Principal (`Más`) para abrir la **Barra de Formato**. Selecciona el texto que quieres formatear y haz clic en los botones (negrita, color, resaltado, etc.).
+*   **Exportar:** Usa el menú de "Más opciones" (`MoreVertical`) en el encabezado del cuaderno para exportarlo a PDF o PNG.
+*   **Minimizar y Cerrar:** Usa los botones `Minus` y `X` para contraer u ocultar el cuaderno sin eliminarlo.
+
+---
+
+## 3. Código Asociado a Funciones Clave
+
+*   **Creación de un Elemento (`addElement` en `board-content.tsx`):**
+    ```typescript
+    const addElement = useCallback((type: ElementType, props: Partial<CanvasElement> = {}) => {
+      if (!elementsRef || !user) return;
+      const centerPoint = canvasRef.current ? canvasRef.current.getViewportCenter() : { x: 40000, y: 40000 };
+      // ... Lógica para definir las propiedades base (posición, tamaño, zIndex) ...
+      // ... Switch case para definir los datos específicos de cada tipo de elemento ...
+      addDoc(elementsRef, newElementData).catch(/* ... */);
+    }, [elementsRef, getNextZIndex, user]);
+    ```
+*   **Actualización de un Elemento (`updateElement` en `board-content.tsx`):**
+    ```typescript
+    const updateElement = useCallback((id: string, updates: Partial<CanvasElement>) => {
+      if (!elementsRef || !user) return;
+      const elementDocRef = doc(elementsRef, id);
+      const cleanedUpdates = cleanUndefined(updates); // Función crucial para evitar errores de Firestore
+      const dataToSend = { ...cleanedUpdates, updatedAt: serverTimestamp() };
+      updateDoc(elementDocRef, dataToSend).catch(/* ... */);
+    }, [elementsRef, user]);
+    ```
+*   **Paginación del Cuaderno (`repaginateContent` en `notepad-element.tsx`):**
+    ```typescript
+    const repaginateContent = useCallback((allHtml: string, format: 'letter' | '10x15') => {
+      // 1. Crea un div temporal para medir el contenido.
+      // 2. Itera sobre los nodos del HTML.
+      // 3. Añade nodos a una página temporal hasta que su `scrollHeight` excede el límite.
+      // 4. Cuando excede, finaliza la página actual y comienza una nueva con el nodo sobrante.
+      // 5. Devuelve un nuevo array de strings (páginas).
+    }, []);
+
+    const handleContentBlur = useCallback(() => {
+        // Llama a repaginateContent y luego a props.onUpdate para guardar el nuevo estado de las páginas.
+    }, [/* ... */]);
+    ```
+
+    
