@@ -486,10 +486,10 @@ export default function BoardPage({ params }: BoardPageProps) {
       if (!file) return;
 
       try {
-        const uploadResult = await uploadFile(file, userId, storage);
-        if (uploadResult.url) {
+        const url = await uploadFile(storage, file, userId);
+        if (url) {
           await addElement('image', {
-            content: { url: uploadResult.url },
+            content: { url },
             properties: { size: { width: 300, height: 200 } },
           });
           toast({ title: 'Imagen subida' });
@@ -859,7 +859,7 @@ export default function BoardPage({ params }: BoardPageProps) {
         onSelectElement={handleSelectElement}
         updateElement={updateElement}
         deleteElement={deleteElement}
-        unanchorElement={(id) => {
+         unanchorElement={(id: string) => {
           const element = elements.find(el => el.id === id);
           if (element && element.parentId) {
             updateElement(id, { parentId: undefined });

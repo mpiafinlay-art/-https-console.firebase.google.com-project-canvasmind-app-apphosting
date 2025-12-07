@@ -16,3 +16,22 @@ node_modules
 
 # firebase
 .firebase
+
+# Next.js
+.next/
+
+# Environment variables
+.env
+.env.local
+.env*.local
+
+# Backup files
+*.tar.gz
+*.zip
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store

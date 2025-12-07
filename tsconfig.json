@@ -4,15 +4,50 @@
     "target": "ES2020",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "types": ["node", "mocha"],
+    "types": [
+      "node",
+      "mocha"
+    ],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "declaration": true,
     "skipLibCheck": true,
     "paths": {
-      "firebase-frameworks": ["./packages/firebase-frameworks"],
-      "@apphosting/*": ["./packages/@apphosting/*"],
-    }
-  }
+      "@/*": [
+        "./src/*"
+      ],
+      "firebase-frameworks": [
+        "./packages/firebase-frameworks"
+      ],
+      "@apphosting/*": [
+        "./packages/@apphosting/*"
+      ]
+    },
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "incremental": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "packages"
+  ]
 }
