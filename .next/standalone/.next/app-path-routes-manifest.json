@@ -1,1 +1,1 @@
-{"/_not-found/page":"/_not-found","/api/proxy/route":"/api/proxy","/api/upload/route":"/api/upload","/page":"/","/board/[boardId]/page":"/board/[boardId]","/favicon.ico/route":"/favicon.ico"}
+{"/api/proxy/route":"/api/proxy","/api/upload/route":"/api/upload","/_not-found/page":"/_not-found","/page":"/","/favicon.ico/route":"/favicon.ico","/board/[boardId]/page":"/board/[boardId]"}
