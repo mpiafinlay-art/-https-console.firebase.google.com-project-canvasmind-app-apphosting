@@ -40,7 +40,7 @@
   "hosting": [
     {
       "target": "app-micerebro",
-      "public": "out",
+      "public": "public",
       "ignore": [
         "firebase.json",
         "**/.*",

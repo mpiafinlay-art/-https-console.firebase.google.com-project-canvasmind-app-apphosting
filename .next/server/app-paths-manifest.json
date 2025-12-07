@@ -1,0 +1,8 @@
+{
+  "/api/proxy/route": "app/api/proxy/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/api/upload/route": "app/api/upload/route.js",
+  "/page": "app/page.js",
+  "/board/[boardId]/page": "app/board/[boardId]/page.js"
+}
