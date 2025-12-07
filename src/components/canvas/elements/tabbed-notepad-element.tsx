@@ -120,29 +120,60 @@ export default function TabbedNotepadElement(props: CommonElementProps) {
     onUpdate(id, { content: updatedContent });
   }, [id, tabbedContent, onUpdate]);
 
+  // Ref para mantener referencia estable a tabbedContent
+  const tabbedContentRef = useRef<TabbedNotepadContent>(tabbedContent);
+  
+  // Sincronizar ref cuando cambia tabbedContent
+  useEffect(() => {
+    tabbedContentRef.current = tabbedContent;
+  }, [tabbedContent]);
+  
   // Actualizar contenido de pestaña
   const handleTabContentChange = useCallback((tabId: string, newContent: string) => {
     // Actualizar estado local inmediatamente
     setLocalTabContent(prev => ({ ...prev, [tabId]: newContent }));
     
+    // Usar ref para evitar dependencia circular
+    const currentContent = tabbedContentRef.current;
     const updatedContent: TabbedNotepadContent = {
-      ...tabbedContent,
-      tabs: tabbedContent.tabs.map((tab: TabbedNotepadTab) =>
+      ...currentContent,
+      tabs: currentContent.tabs.map((tab: TabbedNotepadTab) =>
         tab.id === tabId ? { ...tab, content: newContent } : tab
       ),
     };
     onUpdate(id, { content: updatedContent });
-  }, [id, tabbedContent, onUpdate]);
+  }, [id, onUpdate]); // Eliminar tabbedContent de dependencias, usar ref
+  
+  // Ref para almacenar el contenido anterior y evitar loops
+  const prevTabsRef = useRef<string>('');
+  // Ref para leer localTabContent sin causar re-renders
+  const localTabContentRef = useRef<{ [key: string]: string }>({});
+  
+  // Sincronizar ref con state
+  useEffect(() => {
+    localTabContentRef.current = localTabContent;
+  }, [localTabContent]);
   
   // Sincronizar estado local con props cuando cambia el contenido externo
   useEffect(() => {
+    // Crear string estable para comparar
+    const currentTabsString = tabbedContent.tabs.map(t => `${t.id}|${t.content}`).join('||');
+    
+    // Solo ejecutar si realmente cambió el contenido
+    if (prevTabsRef.current === currentTabsString && Object.keys(localTabContentRef.current).length > 0) {
+      return;
+    }
+    
+    prevTabsRef.current = currentTabsString;
+    
     const newLocalContent: { [key: string]: string } = {};
     tabbedContent.tabs.forEach((tab: TabbedNotepadTab) => {
       const textarea = textareaRefs.current[tab.id];
       // Solo actualizar si el textarea NO está enfocado (para preservar cursor)
       if (textarea && document.activeElement !== textarea) {
         // Solo actualizar si el contenido cambió externamente (no desde onChange)
-        const currentLocal = localTabContent[tab.id];
+        // Usar ref para leer valor actual sin causar loop
+        const currentLocal = localTabContentRef.current[tab.id];
         if (currentLocal !== tab.content) {
           newLocalContent[tab.id] = tab.content;
         } else {
@@ -150,21 +181,17 @@ export default function TabbedNotepadElement(props: CommonElementProps) {
         }
       } else {
         // Mantener el valor local si está enfocado
-        newLocalContent[tab.id] = localTabContent[tab.id] ?? tab.content;
+        newLocalContent[tab.id] = localTabContentRef.current[tab.id] ?? tab.content;
       }
     });
     // Solo actualizar si hay cambios
     const hasChanges = Object.keys(newLocalContent).some(
-      key => newLocalContent[key] !== localTabContent[key]
+      key => newLocalContent[key] !== localTabContentRef.current[key]
     );
-    if (hasChanges || Object.keys(localTabContent).length === 0) {
+    if (hasChanges || Object.keys(localTabContentRef.current).length === 0) {
       setLocalTabContent(newLocalContent);
     }
-  }, [
-    // Dependencia estable: crear string único basado en contenido para evitar re-renders innecesarios
-    tabbedContent.tabs.map(t => `${t.id}|${t.content}`).join('||'),
-    tabbedContent.tabs.length
-  ]);
+  }, [tabbedContent.tabs]); // Solo depender de tabs, usar refs para el resto
 
   // Exportar a PNG
   const handleExportToPng = useCallback(async () => {
@@ -263,17 +290,26 @@ export default function TabbedNotepadElement(props: CommonElementProps) {
     enabled: true,
   });
 
+  // Ref para mantener referencia estable a handleTabContentChange
+  const handleTabContentChangeRef = useRef(handleTabContentChange);
+  
+  // Sincronizar ref cuando cambia handleTabContentChange
+  useEffect(() => {
+    handleTabContentChangeRef.current = handleTabContentChange;
+  }, [handleTabContentChange]);
+  
   // Actualizar contenido de pestaña cuando cambia el valor del textarea
   useEffect(() => {
     if (activeTextareaRef.current && activeTab) {
       const textarea = activeTextareaRef.current;
       const handleInput = () => {
-        handleTabContentChange(activeTab.id, textarea.value);
+        // Usar ref para evitar dependencia circular
+        handleTabContentChangeRef.current(activeTab.id, textarea.value);
       };
       textarea.addEventListener('input', handleInput);
       return () => textarea.removeEventListener('input', handleInput);
     }
-  }, [activeTab, handleTabContentChange]);
+  }, [activeTab?.id]); // Solo depender del ID de la pestaña activa
 
   const backgroundColor = safeProperties?.backgroundColor || '#ffffff';
 

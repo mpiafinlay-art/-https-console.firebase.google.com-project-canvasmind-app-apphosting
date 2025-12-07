@@ -202,7 +202,8 @@ export const useDictation = (): UseDictationReturn => {
       return;
     }
 
-    if (isListening) {
+    // Usar ref para evitar dependencia circular
+    if (isListeningRef.current) {
       console.warn('Ya está escuchando');
       return;
     }
@@ -223,6 +224,7 @@ export const useDictation = (): UseDictationReturn => {
       // Manejar error de permisos
       if (error.name === 'NotAllowedError' || error.message?.includes('not-allowed')) {
         setPermissionError('Permiso de micrófono denegado. Por favor, permite el acceso al micrófono en la configuración de tu navegador.');
+        isListeningRef.current = false;
         setIsListening(false);
         return;
       }
@@ -232,19 +234,21 @@ export const useDictation = (): UseDictationReturn => {
         try {
           recognitionRef.current?.stop();
           setTimeout(() => {
-            if (recognitionRef.current) {
+            if (recognitionRef.current && !isManualStopRef.current) {
               recognitionRef.current.start();
             }
           }, 100);
         } catch (retryError) {
           console.error('Error al reiniciar:', retryError);
+          isListeningRef.current = false;
           setIsListening(false);
         }
       } else {
+        isListeningRef.current = false;
         setIsListening(false);
       }
     }
-  }, [isSupported, isListening]);
+  }, [isSupported]); // Eliminar isListening de dependencias, usar ref
 
   // Función para detener reconocimiento
   const stop = useCallback(() => {
@@ -264,12 +268,13 @@ export const useDictation = (): UseDictationReturn => {
 
   // Función para alternar reconocimiento
   const toggle = useCallback(async () => {
-    if (isListening) {
+    // Usar ref para evitar dependencia circular
+    if (isListeningRef.current) {
       stop();
     } else {
       await start();
     }
-  }, [isListening, start, stop]);
+  }, [start, stop]); // Eliminar isListening de dependencias, usar ref
 
   // Función para resetear transcript
   const resetTranscript = useCallback(() => {
