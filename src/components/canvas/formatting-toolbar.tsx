@@ -383,17 +383,37 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* 2. Tag (Etiqueta/Marcador) - Botón blanco */}
+      {/* 2. Tag (Etiqueta/Marcador) - Botón blanco - Clonado de producción */}
       <button
         className={whiteButtonClassName}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          // Funcionalidad completa: crear localizador/etiqueta en el centro del viewport
           if (onAddComment) {
             onAddComment();
+          } else if (addElement) {
+            // Fallback: crear directamente si addElement está disponible
+            const viewportCenter = { 
+              x: typeof window !== 'undefined' ? window.innerWidth / 2 : 40000, 
+              y: typeof window !== 'undefined' ? window.innerHeight / 2 : 40000 
+            };
+            addElement('comment', {
+              content: { 
+                title: 'Nuevo Localizador', 
+                label: 'Localizador',
+                text: '' 
+              },
+              properties: {
+                position: viewportCenter,
+                size: { width: 48, height: 48 },
+              },
+            }).catch((error) => {
+              console.error('Error al crear localizador:', error);
+            });
           }
         }}
-        title="Crear etiqueta de posición"
+        title="Crear etiqueta de posición / Localizador"
       >
         <Tag className={iconClassName} />
       </button>
