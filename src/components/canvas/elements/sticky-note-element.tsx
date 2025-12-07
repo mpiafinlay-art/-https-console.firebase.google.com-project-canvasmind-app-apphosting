@@ -80,12 +80,29 @@ export default function StickyNoteElement(props: CommonElementProps) {
     },
   });
 
+  // Ref para almacenar el contenido anterior y evitar loops
+  const prevContentRef = useRef<string>('');
+  
   useEffect(() => {
-    // CRÍTICO: Solo actualizar si NO está enfocado (preservar cursor)
-    if (editorRef.current && textContent !== editorRef.current.innerHTML) {
+    // CRÍTICO: Solo actualizar si NO está enfocado (preservar cursor y formato)
+    if (editorRef.current) {
       const isFocused = document.activeElement === editorRef.current;
+      
+      // Solo actualizar si realmente cambió
+      if (prevContentRef.current === textContent) {
+        return;
+      }
+      prevContentRef.current = textContent;
+      
       if (!isFocused) {
-        editorRef.current.innerHTML = textContent || '';
+        // Usar helper para preservar cursor y formato
+        const { updateInnerHTMLPreservingCursor } = require('@/lib/cursor-helper');
+        const hasHTML = /<[^>]+>/.test(textContent);
+        if (hasHTML) {
+          updateInnerHTMLPreservingCursor(editorRef.current, textContent);
+        } else {
+          updateInnerHTMLPreservingCursor(editorRef.current, textContent || '');
+        }
       }
     }
   }, [textContent]);

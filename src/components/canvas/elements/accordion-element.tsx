@@ -327,33 +327,9 @@ function EditableContent({
         return;
       }
       
-      // Guardar posición del cursor antes de actualizar
-      const selection = window.getSelection();
-      let savedRange: Range | null = null;
-      
-      if (selection && selection.rangeCount > 0) {
-        savedRange = selection.getRangeAt(0).cloneRange();
-      }
-      
-      editorRef.current.innerHTML = value || '';
-      
-      // Restaurar cursor solo si había uno guardado
-      if (savedRange && editorRef.current.firstChild) {
-        try {
-          const textNode = editorRef.current.firstChild;
-          if (textNode.nodeType === Node.TEXT_NODE) {
-            const maxPos = textNode.textContent?.length || 0;
-            const newPos = Math.min(savedRange.startOffset, maxPos);
-            const newRange = document.createRange();
-            newRange.setStart(textNode, newPos);
-            newRange.collapse(true);
-            selection?.removeAllRanges();
-            selection?.addRange(newRange);
-          }
-        } catch (e) {
-          // Si falla restaurar cursor, no hacer nada
-        }
-      }
+      // Usar helper para preservar cursor
+      const { updateInnerHTMLPreservingCursor } = require('@/lib/cursor-helper');
+      updateInnerHTMLPreservingCursor(editorRef.current, value || '');
     }
   }, [value, isListening, liveTranscript, finalTranscript, interimTranscript]);
 

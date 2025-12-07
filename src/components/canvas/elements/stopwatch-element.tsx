@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CommonElementProps } from '@/components/canvas/transformable-element';
+import type { CommonElementProps } from '@/lib/types';
 
 export default function StopwatchElement({ id, onUpdate, onSelectElement, isSelected }: CommonElementProps) {
   const [time, setTime] = useState(0);

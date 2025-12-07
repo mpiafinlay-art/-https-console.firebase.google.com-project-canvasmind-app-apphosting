@@ -182,7 +182,9 @@ export default function NotepadElement(props: CommonElementProps) {
         const cleanContent = pageContent === '<div><br></div>' || pageContent === '<div></div>' || pageContent.trim() === '' ? '' : pageContent;
         // CRÍTICO: Solo actualizar si NO está enfocado (preservar cursor)
         if (!isFocused && contentRef.current.innerHTML !== cleanContent) {
-          contentRef.current.innerHTML = cleanContent;
+          // Usar helper para preservar cursor si hay uno guardado
+          const { updateInnerHTMLPreservingCursor } = require('@/lib/cursor-helper');
+          updateInnerHTMLPreservingCursor(contentRef.current, cleanContent);
         }
       }
     }

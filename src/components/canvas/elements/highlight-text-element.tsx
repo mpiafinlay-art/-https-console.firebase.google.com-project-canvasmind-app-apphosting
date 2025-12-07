@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { CommonElementProps } from '@/components/canvas/transformable-element';
+import type { CommonElementProps } from '@/lib/types';
 import { useDictationInput } from '@/hooks/use-dictation-input';
 import ContentEditable from 'react-contenteditable';
 

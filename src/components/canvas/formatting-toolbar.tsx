@@ -72,7 +72,7 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
   addElement,
   isPanningActive = false,
 }) => {
-  const [popoverOpen, setPopoverOpen] = useState<'fontSize' | 'underlineColor' | 'textColor' | null>(null);
+  const [popoverOpen, setPopoverOpen] = useState<'fontSize' | 'underlineColor' | 'textColor' | 'highlight' | null>(null);
   const [fontSize, setFontSize] = useState('18px');
   const [rndPosition, setRndPosition] = useState({ x: 0, y: 0 });
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -193,8 +193,10 @@ const FormattingToolbar: React.FC<FormattingToolbarProps> = ({
         const range = document.createRange();
         range.selectNodeContents(span);
         range.collapse(false);
-        selection.removeAllRanges();
-        selection.addRange(range);
+        if (selection) {
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
         activeElement.dispatchEvent(new Event('input', { bubbles: true }));
       }
       setPopoverOpen(null);

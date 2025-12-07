@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CommonElementProps } from '@/components/canvas/transformable-element';
+import type { CommonElementProps } from '@/lib/types';
 
 const PRESET_TIMES = [5, 10, 15, 20, 30, 40, 60]; // minutos
 

@@ -34,17 +34,23 @@ export default function TextElement(props: CommonElementProps) {
   const textContent = typeof content === 'string' ? content : '';
 
   // Hook de autoguardado robusto
+  // CRÍTICO: Guardar HTML completo (con formato de color) en lugar de solo texto
   const { saveStatus, handleBlur: handleAutoSaveBlur, handleChange } = useAutoSave({
     getContent: () => {
       const html = editorRef.current?.innerHTML || '';
-      // Normalizar HTML para comparación consistente
+      // Normalizar HTML para comparación consistente, pero preservar formato
       return html.replace(/\s+/g, ' ').replace(/>\s+</g, '><').trim();
     },
     onSave: async (newContent) => {
-      // Normalizar también el contenido guardado para comparar
-      const normalizedTextContent = (textContent || '').replace(/\s+/g, ' ').replace(/>\s+</g, '><').trim();
-      if (newContent !== normalizedTextContent) {
-        await onUpdate(id, { content: newContent });
+      // Comparar con el HTML actual (que puede incluir formato)
+      // Si el contenido cambió (incluyendo formato), guardarlo
+      const currentHTML = editorRef.current?.innerHTML || '';
+      const normalizedCurrent = currentHTML.replace(/\s+/g, ' ').replace(/>\s+</g, '><').trim();
+      const normalizedNew = (newContent || '').replace(/\s+/g, ' ').replace(/>\s+</g, '><').trim();
+      
+      // Guardar el HTML completo (con formato) en lugar de solo texto plano
+      if (normalizedNew !== normalizedCurrent) {
+        await onUpdate(id, { content: normalizedNew });
       }
     },
     debounceMs: 2000,
@@ -56,12 +62,39 @@ export default function TextElement(props: CommonElementProps) {
     },
   });
 
+  // Ref para almacenar el contenido anterior y evitar loops
+  const prevContentRef = useRef<string>('');
+  
   useEffect(() => {
-    // CRÍTICO: Solo actualizar si NO está enfocado (preservar cursor)
-    if (editorRef.current && textContent !== editorRef.current.innerHTML) {
+    // CRÍTICO: Solo actualizar si NO está enfocado (preservar cursor y formato)
+    // Si textContent es HTML (contiene tags), usarlo directamente
+    // Si es texto plano, solo actualizar si no hay formato existente
+    if (editorRef.current) {
       const isFocused = document.activeElement === editorRef.current;
+      const currentHTML = editorRef.current.innerHTML || '';
+      
+      // Solo actualizar si realmente cambió y no está enfocado
+      if (prevContentRef.current === textContent) {
+        return;
+      }
+      prevContentRef.current = textContent;
+      
       if (!isFocused) {
-        editorRef.current.innerHTML = textContent || '';
+        // Si textContent contiene HTML (tiene tags), usarlo directamente
+        // Esto preserva el formato de color aplicado
+        const hasHTML = /<[^>]+>/.test(textContent);
+        if (hasHTML && currentHTML !== textContent) {
+          // Usar helper para preservar cursor
+          const { updateInnerHTMLPreservingCursor } = require('@/lib/cursor-helper');
+          updateInnerHTMLPreservingCursor(editorRef.current, textContent);
+        } else if (!hasHTML && currentHTML !== textContent) {
+          // Solo texto plano, actualizar solo si no hay formato
+          const hasFormatting = currentHTML.includes('<span') || currentHTML.includes('<div');
+          if (!hasFormatting) {
+            const { updateInnerHTMLPreservingCursor } = require('@/lib/cursor-helper');
+            updateInnerHTMLPreservingCursor(editorRef.current, textContent || '');
+          }
+        }
       }
     }
   }, [textContent]);
