@@ -349,10 +349,25 @@ export default function BoardPage({ params }: BoardPageProps) {
     const hasRecentLogin = typeof window !== 'undefined' ? sessionStorage.getItem('hasRecentLogin') === 'true' : false;
     const loginTimestamp = typeof window !== 'undefined' ? sessionStorage.getItem('loginTimestamp') : null;
     const redirectingToBoard = typeof window !== 'undefined' ? sessionStorage.getItem('redirectingToBoard') : null;
-    const isLoginRecent = hasRecentLogin && loginTimestamp && (Date.now() - parseInt(loginTimestamp)) < 60000;
+    const anonymousUserId = typeof window !== 'undefined' ? sessionStorage.getItem('anonymousUserId') : null;
+    // CRÍTICO: Aumentar tiempo de espera a 2 minutos para dar tiempo a Firebase Auth de inicializar
+    const isLoginRecent = hasRecentLogin && loginTimestamp && (Date.now() - parseInt(loginTimestamp)) < 120000;
+    
+    console.log('🔍 [BoardPage] Estado de autenticación:', {
+      hasUser: !!user,
+      userId: user?.uid,
+      hasRecentLogin,
+      loginTimestamp,
+      redirectingToBoard,
+      boardId,
+      isLoginRecent,
+      anonymousUserId,
+      timeSinceLogin: loginTimestamp ? Date.now() - parseInt(loginTimestamp) : null
+    });
     
     // Redirigir si no hay usuario y no hay login reciente
     if (!user && !isLoginRecent) {
+      console.log('⚠️ [BoardPage] No hay usuario ni login reciente, redirigiendo a inicio...');
       if (typeof window !== 'undefined') {
         sessionStorage.clear();
         localStorage.clear();
@@ -363,17 +378,22 @@ export default function BoardPage({ params }: BoardPageProps) {
     
     // Esperar si hay login reciente pero no usuario (CRÍTICO para usuarios anónimos después de redirect)
     if (isLoginRecent && !user) {
-      const waitTime = redirectingToBoard === boardId ? 30000 : 10000; // Aumentar tiempo de espera
+      // CRÍTICO: Aumentar tiempo de espera - Firebase Auth puede tardar en inicializar después de redirect
+      const waitTime = redirectingToBoard === boardId ? 60000 : 30000; // 60s si es el tablero correcto, 30s si no
       console.log('⏳ [BoardPage] Esperando usuario después de login reciente...', {
         waitTime,
         redirectingToBoard,
         boardId,
         hasRecentLogin,
-        loginTimestamp
+        loginTimestamp,
+        anonymousUserId,
+        timeSinceLogin: loginTimestamp ? Date.now() - parseInt(loginTimestamp) : null
       });
       waitTimerRef.current = setTimeout(() => {
         if (!user && typeof window !== 'undefined') {
           console.log('⚠️ [BoardPage] Timeout: Usuario no disponible después de esperar, redirigiendo...');
+          // CRÍTICO: No limpiar sessionStorage completamente - puede haber información útil
+          // Solo limpiar flags de login, mantener anonymousUserId si existe
           sessionStorage.removeItem('hasRecentLogin');
           sessionStorage.removeItem('loginTimestamp');
           sessionStorage.removeItem('redirectingToBoard');
@@ -413,11 +433,14 @@ export default function BoardPage({ params }: BoardPageProps) {
         loadBoardRef.current(boardId, userId).then((loadedBoardId: string | null) => {
           isLoadingRef.current = false;
           if (loadedBoardId && typeof window !== 'undefined') {
+            // CRÍTICO: Solo limpiar sessionStorage después de confirmar que el tablero se cargó exitosamente
+            // Esperar más tiempo para asegurar que todo está cargado
             setTimeout(() => {
               sessionStorage.removeItem('hasRecentLogin');
               sessionStorage.removeItem('loginTimestamp');
               sessionStorage.removeItem('redirectingToBoard');
-            }, 2000);
+              // NO limpiar anonymousUserId - puede ser necesario para futuras navegaciones
+            }, 5000); // Aumentar a 5 segundos
           } else {
             hasLoadedRef.current = false;
           }
